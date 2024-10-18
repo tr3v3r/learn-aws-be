@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { LearnAwsBeStack } from '../lib/learn-aws-be-stack';
+import { LambdasStack } from '../lib/lambdas-stack';
 
 const app = new cdk.App();
-new LearnAwsBeStack(app, 'LearnAwsBeStack', {
+new LambdasStack(app, 'LambdasStack', {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
