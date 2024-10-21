@@ -8,20 +8,27 @@ export class LambdasStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    const getProductsLayer = new lambda.LayerVersion(this, 'get-products-layer', {
+      code: lambda.Code.fromAsset(path.join(__dirname, '../layers/get-products')),
+      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+    });
+
     const getProductsFunction = new lambda.Function(this, 'get-products-function', {
       runtime: lambda.Runtime.NODEJS_20_X,
       memorySize: 1024,
       timeout: cdk.Duration.seconds(5),
-      handler: 'get-products.main',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/products/api')),
+      handler: 'index.main',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/products/api/get-products')),
+      layers: [getProductsLayer],
     });
 
     const getProductByIdFunction = new lambda.Function(this, 'get-product-by-id-function', {
       runtime: lambda.Runtime.NODEJS_20_X,
       memorySize: 1024,
       timeout: cdk.Duration.seconds(5),
-      handler: 'get-products-by-id.main',
-      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/products/api')),
+      handler: 'index.main',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/products/api/get-products-by-id')),
+      layers: [getProductsLayer],
     });
 
     const api = new apigateway.RestApi(this, "my-api", {
