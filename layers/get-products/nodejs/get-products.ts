@@ -1,5 +1,5 @@
-import * as products from './mocks/products.json';
+import * as products from "./mocks/products.json";
 
 export function getProducts() {
-    return products
+  return products;
 }
