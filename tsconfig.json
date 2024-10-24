@@ -20,9 +20,13 @@
     "inlineSources": true,
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
+    "resolveJsonModule": true,
     "typeRoots": [
       "./node_modules/@types"
-    ]
+    ],
+    "paths": {
+        "/opt/nodejs/get-products": ["./layers/get-products/nodejs/get-products.ts"]
+     }
   },
   "exclude": [
     "node_modules",
