@@ -1,0 +1,15 @@
+{
+  "name": "lambda-utils",
+  "version": "1.0.0",
+  "main": "lambda-utils.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "types": "./lambda-utils.d.ts",
+  "description": "",
+  "dependencies": {
+    "uuid": "^11.0.2"
+  }
+}

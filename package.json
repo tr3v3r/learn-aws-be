@@ -26,8 +26,14 @@
     "typescript-eslint": "^8.10.0"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.678.0",
+    "@aws-sdk/util-dynamodb": "^3.679.0",
+    "@types/aws-lambda": "^8.10.145",
+    "@types/uuid": "^10.0.0",
     "aws-cdk-lib": "2.161.1",
+    "aws-lambda": "^1.0.7",
     "constructs": "^10.0.0",
-    "source-map-support": "^0.5.21"
+    "source-map-support": "^0.5.21",
+    "uuid": "^10.0.0"
   }
 }

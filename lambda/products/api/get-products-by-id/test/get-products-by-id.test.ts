@@ -1,36 +1,72 @@
 import { main } from "../index";
-
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { getFullProductsData } from "/opt/nodejs/lambda-utils";
 import { Product } from "../../../../types";
 
-const mockProducts = [
-  { id: "1", name: "Product 1" },
-  { id: "2", name: "Product 2" },
-] as unknown as Product[];
-
 jest.mock(
-  "/opt/nodejs/get-products",
-  () => ({
-    getProducts: jest.fn(() => mockProducts),
-  }),
+  "/opt/nodejs/lambda-utils",
+  () => {
+    return {
+      getFullProductsData: jest.fn(),
+    };
+  },
   {
     virtual: true,
   },
 );
 
 describe("get-products-by-id", () => {
-  it("should return the product when found", async () => {
-    const event = { productId: "1" };
+  const mockProduct = { id: "1", name: "Product 1" } as unknown as Product;
+  const mockStock = { productId: "1", stock: 10 };
 
-    const res = await main(event);
-
-    expect(res).toEqual({ id: "1", name: "Product 1" });
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  it("should return an error when the product is not found", async () => {
-    const event = { productId: "3" };
+  it("should return the product when found", async () => {
+    const mockSend = jest.spyOn(DynamoDBClient.prototype, "send");
+    // @ts-expect-error as we are mocking the send method
+    mockSend.mockResolvedValueOnce({ Items: [mockProduct] });
+    // @ts-expect-error as we are mocking the send method
+    mockSend.mockResolvedValueOnce({ Items: [mockStock] });
 
-    const res = await main(event);
+    (getFullProductsData as jest.Mock).mockReturnValue([mockProduct]);
 
-    expect(res).toEqual(new Error("Product not found"));
+    const res = await main({ productId: "1" });
+
+    expect(mockSend).toHaveBeenCalledTimes(2);
+    expect(getFullProductsData).toHaveBeenCalledWith(
+      [mockProduct],
+      [mockStock],
+    );
+    expect(res).toEqual(mockProduct);
+  });
+
+  it("should return an error when product is not found", async () => {
+    const mockSend = jest.spyOn(DynamoDBClient.prototype, "send");
+    // @ts-expect-error as we are mocking the send method
+    mockSend.mockResolvedValueOnce({ Items: [] });
+    // @ts-expect-error as we are mocking the send method
+    mockSend.mockResolvedValueOnce({ Items: [] });
+
+    try {
+      await main({ productId: "1" });
+    } catch (e) {
+      expect(mockSend).toHaveBeenCalledTimes(2);
+      expect(e).toEqual("Product not found");
+    }
+  });
+
+  it("should return an error when there is an exception", async () => {
+    const mockSend = jest.spyOn(DynamoDBClient.prototype, "send");
+    // @ts-expect-error as we are mocking the send method
+    mockSend.mockRejectedValueOnce(new Error("DynamoDB error"));
+
+    try {
+      await main({ productId: "1" });
+    } catch (e) {
+      expect(mockSend).toHaveBeenCalledTimes(1);
+      expect(e).toEqual("Internal server error");
+    }
   });
 });

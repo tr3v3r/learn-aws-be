@@ -25,7 +25,7 @@
       "./node_modules/@types"
     ],
     "paths": {
-        "/opt/nodejs/get-products": ["./layers/get-products/nodejs/get-products.ts"]
+        "/opt/nodejs/lambda-utils": ["./layers/lambda-utils/nodejs/lambda-utils.ts"]
      }
   },
   "exclude": [
