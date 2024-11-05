@@ -5,5 +5,19 @@ export type Product = {
   title: string;
   description: string;
   price: number;
-  count: 100;
+  count: number;
+};
+
+export type ProductDTO = {
+  createdAt: number;
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+};
+
+export type StockDTO = {
+  createdAt: number;
+  product_id: string;
+  count: number;
 };
