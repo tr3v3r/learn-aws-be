@@ -1,0 +1,16 @@
+{
+  "name": "import-file-parser",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "types": "./index.d.ts",
+  "description": "",
+  "dependencies": {
+    "csv-parse": "^5.5.6",
+    "neat-csv": "^7.0.0"
+  }
+}
