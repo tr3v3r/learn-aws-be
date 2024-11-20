@@ -7,7 +7,7 @@ import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 
 const ProductsTableName = "Products";
 const StocksTableName = "Stocks";
-export class LambdasStack extends cdk.Stack {
+export class ProductServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
