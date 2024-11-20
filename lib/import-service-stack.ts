@@ -6,6 +6,9 @@ import * as path from "path";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as s3n from "aws-cdk-lib/aws-s3-notifications";
 import { Construct } from "constructs";
+import * as sqs from "aws-cdk-lib/aws-sqs";
+import { SQS_QUEUE_ARN } from "./constants";
+import { StringParameter } from "aws-cdk-lib/aws-ssm";
 
 const bucketName = "ImoportServiceBucket";
 const uploadFolderName = "uploaded";
@@ -14,6 +17,13 @@ const parsedFolderName = "parsed";
 export class ImportServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    const catalogItemsQueue = new sqs.Queue(this, "catalog-items-queue");
+
+    new StringParameter(this, "catalog-items-queue-arn", {
+      parameterName: SQS_QUEUE_ARN,
+      stringValue: catalogItemsQueue.queueArn,
+    });
 
     const importBucket = new s3.Bucket(this, bucketName, {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -68,12 +78,14 @@ export class ImportServiceStack extends cdk.Stack {
           BUCKET_NAME: importBucket.bucketName,
           UPLOAD_FOLDER_NAME: uploadFolderName,
           PARSED_FOLDER_NAME: parsedFolderName,
+          SQS_QUEUE_URL: catalogItemsQueue.queueUrl,
         },
       },
     );
 
     importBucket.grantReadWrite(importFileParserFunction);
     importBucket.grantReadWrite(importProductsFileFunction);
+    catalogItemsQueue.grantSendMessages(importFileParserFunction);
 
     importBucket.addObjectCreatedNotification(
       new s3n.LambdaDestination(importFileParserFunction),

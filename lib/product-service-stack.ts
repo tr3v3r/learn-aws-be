@@ -4,12 +4,26 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as path from "path";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
+import * as sqs from "aws-cdk-lib/aws-sqs";
+import * as sns from "aws-cdk-lib/aws-sns";
+import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
+import * as subscriptions from "aws-cdk-lib/aws-sns-subscriptions";
+import { StringParameter } from "aws-cdk-lib/aws-ssm";
+import { SQS_QUEUE_ARN } from "./constants";
 
 const ProductsTableName = "Products";
 const StocksTableName = "Stocks";
 export class ProductServiceStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    const catalogItemsQueue = sqs.Queue.fromQueueArn(
+      this,
+      "catalog-items-queue",
+      StringParameter.valueForStringParameter(this, SQS_QUEUE_ARN),
+    );
+
+    const createProductTopic = new sns.Topic(this, "product-created-topic");
 
     const productTable = new dynamodb.Table(this, "Products", {
       tableName: ProductsTableName,
@@ -173,6 +187,48 @@ export class ProductServiceStack extends cdk.Stack {
         proxy: false,
       },
     );
+
+    const catalogBatchProcessFunction = new lambda.Function(
+      this,
+      "catalog-batch-process-function",
+      {
+        runtime: lambda.Runtime.NODEJS_20_X,
+        memorySize: 1024,
+        timeout: cdk.Duration.seconds(5),
+        handler: "index.main",
+        code: lambda.Code.fromAsset(
+          path.join(__dirname, "../lambda/products/api/catalog-batch-process"),
+        ),
+        layers: [lambdaUtilsLayer],
+        environment: {
+          PRODUCTS_TABLE_NAME: ProductsTableName,
+          STOCKS_TABLE_NAME: StocksTableName,
+          SNS_TOPIC_ARN: createProductTopic.topicArn,
+        },
+      },
+    );
+
+    productTable.grantWriteData(catalogBatchProcessFunction);
+    stockTable.grantWriteData(catalogBatchProcessFunction);
+
+    catalogBatchProcessFunction.addEventSource(
+      new SqsEventSource(catalogItemsQueue, { batchSize: 5 }),
+    );
+
+    const subscription = new subscriptions.EmailSubscription(
+      process.env.SNS_SUBSCRIPTION_EMAIL as string,
+      {
+        filterPolicy: {
+          title: sns.SubscriptionFilter.stringFilter({
+            matchSuffixes: ["1"],
+          }),
+        },
+      },
+    );
+
+    createProductTopic.addSubscription(subscription);
+
+    createProductTopic.grantPublish(catalogBatchProcessFunction);
 
     const productsResource = api.root.addResource("products", {
       defaultCorsPreflightOptions: {

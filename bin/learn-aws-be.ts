@@ -6,5 +6,5 @@ import { ImportServiceStack } from "../lib/import-service-stack";
 
 const app = new cdk.App();
 
-new ProductServiceStack(app, "LambdasStack", {});
 new ImportServiceStack(app, "ImportServiceStack", {});
+new ProductServiceStack(app, "LambdasStack", {});

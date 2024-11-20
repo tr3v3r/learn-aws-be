@@ -4,12 +4,15 @@ import {
   CopyObjectCommand,
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
+import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { S3Event } from "aws-lambda";
 import { parse } from "csv-parse/sync";
 
 const client = new S3Client({ region: "us-east-1" });
+const sqsClient = new SQSClient({ region: "us-east-1" });
 const uploadFolderName = process.env.UPLOAD_FOLDER_NAME as string;
 const parsedFolderName = process.env.PARSED_FOLDER_NAME as string;
+const sqsQueueUrl = process.env.SQS_QUEUE_URL as string;
 
 export async function main(event: S3Event) {
   const record = event.Records[0];
@@ -34,7 +37,12 @@ export async function main(event: S3Event) {
     delimiter: ";",
   });
 
-  console.log("Records:", records);
+  const message = new SendMessageCommand({
+    QueueUrl: sqsQueueUrl,
+    MessageBody: JSON.stringify(records),
+  });
+
+  await sqsClient.send(message);
 
   const copyCommand = new CopyObjectCommand({
     Bucket: bucketName,
