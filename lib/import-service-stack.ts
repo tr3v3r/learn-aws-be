@@ -20,6 +20,17 @@ export class ImportServiceStack extends cdk.Stack {
 
     const catalogItemsQueue = new sqs.Queue(this, "catalog-items-queue");
 
+    const basicAuthorizerArn = cdk.Fn.importValue("BasicAuthorizerFunctionArn");
+
+    const basicAuthorizer = lambda.Function.fromFunctionAttributes(
+      this,
+      "BasicAuthorizerFunction",
+      {
+        functionArn: basicAuthorizerArn,
+        sameEnvironment: true,
+      },
+    );
+
     new StringParameter(this, "catalog-items-queue-arn", {
       parameterName: SQS_QUEUE_ARN,
       stringValue: catalogItemsQueue.queueArn,
@@ -97,6 +108,15 @@ export class ImportServiceStack extends cdk.Stack {
       description: "This API serves the Lambda functions.",
     });
 
+    const authorizer = new apigateway.TokenAuthorizer(
+      this,
+      "import-authorizer",
+      {
+        handler: basicAuthorizer,
+        identitySource: apigateway.IdentitySource.header("Authorization"),
+      },
+    );
+
     const importProductsFileFunctionIntergration =
       new apigateway.LambdaIntegration(importProductsFileFunction, {
         requestTemplates: {
@@ -139,6 +159,8 @@ export class ImportServiceStack extends cdk.Stack {
             },
           },
         ],
+        authorizer: authorizer,
+        authorizationType: apigateway.AuthorizationType.CUSTOM,
       },
     );
   }
